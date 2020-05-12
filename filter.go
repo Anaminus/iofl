@@ -43,28 +43,28 @@ func (p Params) GetInt(key string) int {
 }
 
 // Filter is implemented by any value that reads from an underlying source while
-// being read.
+// being read. The Close method must close the Source.
 type Filter interface {
-	io.Reader
+	io.ReadCloser
 	// Source returns the source from which the Filter is reading, or nil if
 	// there is no source.
-	Source() io.Reader
+	Source() io.ReadCloser
 }
 
-// Root wraps a general io.Reader to be used as a Filter by returning a nil
+// Root wraps a general io.ReadCloser to be used as a Filter by returning a nil
 // source.
 type Root struct {
-	io.Reader
+	io.ReadCloser
 }
 
 // Source implements Filter. Returns nil.
-func (Root) Source() io.Reader { return nil }
+func (Root) Source() io.ReadCloser { return nil }
 
 // NewFilter returns a new Filter, configured by the given parameters. An
-// optional io.Reader specifies the source from which data will be read.
-// NewFilter may ignore the io.Reader, or return an error if an io.Reader is
-// required.
-type NewFilter func(params Params, r io.Reader) (f Filter, err error)
+// optional io.ReadCloser specifies the source from which data will be read.
+// NewFilter may ignore the io.ReadCloser, or return an error if an
+// io.ReadCloser is required.
+type NewFilter func(params Params, r io.ReadCloser) (f Filter, err error)
 
 // ChainSet contains Filters, and Chains composed of those Filters.
 type ChainSet struct {
@@ -122,7 +122,7 @@ func (s *ChainSet) MustConfigure(config Config) *ChainSet {
 // recursively applies all filters in the chain. If vars is non-nil, then any
 // Filters that implement Expander will be called with vars. If src is non-nil,
 // then it will be used as the source of the first filter in the chain.
-func (s *ChainSet) Resolve(chain string, src io.Reader) (filter Filter, err error) {
+func (s *ChainSet) Resolve(chain string, src io.ReadCloser) (filter Filter, err error) {
 	filterChain, ok := s.config.Chains[chain]
 	if !ok {
 		return nil, fmt.Errorf("unknown chain %q", chain)
@@ -144,10 +144,10 @@ func (s *ChainSet) Resolve(chain string, src io.Reader) (filter Filter, err erro
 	return filter, nil
 }
 
-// Apply calls cb for each io.Reader that implements Filter. The filter's chain
-// is traversed upward until a non-Filter is found. If cb returns and error,
-// that error is returned by Apply.
-func Apply(r io.Reader, cb func(io.Reader) error) error {
+// Apply calls cb for each io.ReadCloser that implements Filter. The filter's
+// chain is traversed upward until a non-Filter is found. If cb returns and
+// error, that error is returned by Apply.
+func Apply(r io.ReadCloser, cb func(io.ReadCloser) error) error {
 	for r != nil {
 		if err := cb(r); err != nil {
 			return err
