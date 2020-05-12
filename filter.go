@@ -98,6 +98,9 @@ func (s *ChainSet) Register(filter FilterDef) error {
 	if s.registry[filter.Name] != nil {
 		return fmt.Errorf("filter %q already registered", filter.Name)
 	}
+	if s.registry == nil {
+		s.registry = map[string]NewFilter{}
+	}
 	s.registry[filter.Name] = filter.New
 	return nil
 }
