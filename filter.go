@@ -122,7 +122,7 @@ func (s *ChainSet) Configure(config Config) error {
 // Returns the ChainSet.
 func (s *ChainSet) MustConfigure(config Config) *ChainSet {
 	s.config = config
-	return nil
+	return s
 }
 
 // Resolve locates the chain of the given name, and produces a Filter that
