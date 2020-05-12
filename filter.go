@@ -2,9 +2,13 @@
 package iofl
 
 import (
+	"errors"
 	"fmt"
 	"io"
 )
+
+// Closed is returned by a filter that has been closed.
+var Closed = errors.New("closed")
 
 // Config configures a ChainSet.
 type Config struct {
