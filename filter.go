@@ -136,7 +136,7 @@ func (s *ChainSet) Resolve(chain string, src io.ReadCloser) (filter Filter, err 
 	}
 	if f, ok := src.(Filter); ok {
 		filter = f
-	} else {
+	} else if src != nil {
 		filter = Root{src}
 	}
 	for i, def := range filterChain {
