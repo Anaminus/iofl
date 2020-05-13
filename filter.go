@@ -73,7 +73,7 @@ type NewFilter func(params Params, r io.ReadCloser) (f Filter, err error)
 // ChainSet contains Filters, and Chains composed of those Filters.
 type ChainSet struct {
 	registry map[string]NewFilter
-	config   Config
+	chains   map[string]Chain
 }
 
 // FilterDef describes a filter to be added to a ChainSet.
@@ -112,16 +112,30 @@ func (s *ChainSet) MustRegister(filter FilterDef) {
 	}
 }
 
-// Configure sets the configuration to be used by the ChainSet.
-func (s *ChainSet) Configure(config Config) error {
-	s.config = config
+// Config returns a copy of the configuration used by the ChainSet.
+func (s *ChainSet) Config() Config {
+	chains := make(map[string]Chain, len(s.chains))
+	for k, v := range s.chains {
+		chains[k] = v
+	}
+	return Config{Chains: chains}
+}
+
+// SetConfig uses Config to configure the ChainSet.
+func (s *ChainSet) SetConfig(config Config) error {
+	s.chains = make(map[string]Chain, len(config.Chains))
+	for k, v := range config.Chains {
+		s.chains[k] = v
+	}
 	return nil
 }
 
-// MustConfigure behaves the same as Configure, but panics if an error occurs.
+// MustSetConfig behaves the same as SetConfig, but panics if an error occurs.
 // Returns the ChainSet.
-func (s *ChainSet) MustConfigure(config Config) *ChainSet {
-	s.config = config
+func (s *ChainSet) MustSetConfig(config Config) *ChainSet {
+	if err := s.SetConfig(config); err != nil {
+		panic(err)
+	}
 	return s
 }
 
@@ -130,7 +144,7 @@ func (s *ChainSet) MustConfigure(config Config) *ChainSet {
 // Filters that implement Expander will be called with vars. If src is non-nil,
 // then it will be used as the source of the first filter in the chain.
 func (s *ChainSet) Resolve(chain string, src io.ReadCloser) (filter Filter, err error) {
-	filterChain, ok := s.config.Chains[chain]
+	filterChain, ok := s.chains[chain]
 	if !ok {
 		return nil, fmt.Errorf("unknown chain %q", chain)
 	}
